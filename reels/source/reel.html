@@ -15,7 +15,7 @@ html,body{margin:0;background:#000;}
 <body><div id="stage"></div>
 <script>
 const B = 60/128;              // one beat @128BPM
-const DUR = 38*B;              // ≈17.8s
+const DUR = 32*B;              // = 15.0s
 const S = document.getElementById('stage');
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const lin=(t,a,b)=>clamp((t-a)/(b-a));
@@ -108,11 +108,11 @@ add(8*B,20*B,(t,s)=>{
 });
 
 // S4 READY stamp
-add(20*B,24*B,(t,s)=>{
+add(20*B,23*B,(t,s)=>{
   const k=lin(t,s+0.05,s+0.28), sc=2.4-1.4*eOut(k);
   const shake=t>s+0.28?(1-lin(t,s+0.28,s+0.8)):0;
   const sx=(rnd(Math.floor(t*30)+3)-.5)*40*shake, sy=(rnd(Math.floor(t*30)+7)-.5)*40*shake;
-  const sub=lin(t,s+2*B,s+2*B+0.3);
+  const sub=lin(t,s+1.5*B,s+1.5*B+0.3);
   let h=bg('room2.jpg',{pos:'55% 50%',scale:1.12+0.08*lin(t,s,s+4*B),filter:'brightness(.55) saturate(1.3)'});
   h+=grad('radial-gradient(ellipse at 50% 48%,rgba(255,40,220,.35),rgba(10,0,20,.7) 75%)');
   h+=`<div class="c" style="top:560px;font-size:300px;font-weight:900;color:transparent;-webkit-text-stroke:3px rgba(255,180,250,.55);letter-spacing:-6px;opacity:${eOut(k)}">READY</div>`;
@@ -126,18 +126,19 @@ add(20*B,24*B,(t,s)=>{
 });
 
 // S5 slogan on bokeh
-add(24*B,28*B,(t,s)=>{
-  const w1=lin(t,s+0.1,s+0.5), w2=lin(t,s+0.5,s+0.9), w3=lin(t,s+1.0,s+1.4);
+add(23*B,26*B,(t,s)=>{
+  const w1=lin(t,s+0.05,s+0.35), w2=lin(t,s+0.3,s+0.6), w3=lin(t,s+0.6,s+0.9);
   let h=bg('bokeh.jpg',{pos:'8% 40%',scale:1.05+0.12*eOut(lin(t,s,s+4*B)),filter:'brightness(.75) saturate(1.2)'});
   h+=grad('linear-gradient(180deg,rgba(15,0,25,.0) 30%,rgba(15,0,25,.8) 85%)');
   const word=(x,txt,top,size,extra='')=>`<div class="c ${extra}" style="top:${top}px;font-size:${size}px;font-weight:900;opacity:${eOut(x)};filter:blur(${(1-x)*10}px);transform:translateY(${(1-eOut(x))*40}px);letter-spacing:-2px">${txt}</div>`;
   h+=word(w1,'지금,',1080,120,'glow')+word(w2,'바레를 시작할',1220,104)+word(w3,'시간',1350,104,'glow');
   h+=flash(t,s,0.12,'255,60,220');
+  h+=`<div class="L" style="background:rgba(255,255,255,${eIn(lin(t,s+2.4*B,s+3*B))})"></div>`;
   return h;
 });
 
 // S6 NOW BARRE push
-add(28*B,30*B,(t,s)=>{
+add(-9,-8,(t,s)=>{
   const p=lin(t,s,s+2*B);
   let h=bg('light.jpg',{pos:'50% 45%',scale:1.0+0.45*eIn(p),filter:`brightness(${1+p*0.6}) saturate(1.2)`});
   h+=flash(t,s,0.12);
@@ -146,8 +147,8 @@ add(28*B,30*B,(t,s)=>{
 });
 
 // S7 End card
-add(30*B,DUR+1,(t,s)=>{
-  const f=lin(t,s,s+0.5), lg=lin(t,s+0.15,s+0.9), n1=lin(t,s+0.7,s+1.1), n2=lin(t,s+1.0,s+1.4), n3=lin(t,s+1.4,s+1.8), n4=lin(t,s+1.8,s+2.2);
+add(26*B,DUR+1,(t,s)=>{
+  const f=lin(t,s,s+0.5), lg=lin(t,s+0.15,s+0.9), n1=lin(t,s+0.5,s+0.85), n2=lin(t,s+0.75,s+1.1), n3=lin(t,s+1.0,s+1.35), n4=lin(t,s+1.25,s+1.6);
   const breathe=1+0.015*Math.sin((t-s)*3);
   let h=bg('wide.jpg',{pos:'60% 50%',scale:1.2,filter:'blur(18px) brightness(.4) saturate(1.4)'});
   h+=grad('radial-gradient(ellipse at 50% 38%,rgba(190,40,255,.45),rgba(12,2,20,.92) 70%)');
