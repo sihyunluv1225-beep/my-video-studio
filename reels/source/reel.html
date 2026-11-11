@@ -1,0 +1,180 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:'Pret';src:url(PretendardVariable.woff2) format('woff2');font-weight:45 920;}
+@font-face{font-family:'Corm';src:url(cormorant-garamond-latin-600-italic.woff2);font-style:italic;font-weight:600;}
+@font-face{font-family:'Corm';src:url(cormorant-garamond-latin-600-normal.woff2);font-weight:600;}
+html,body{margin:0;background:#000;}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0410;font-family:'Pret',sans-serif;color:#fff;}
+.L{position:absolute;inset:0;}
+.bg{position:absolute;inset:0;background-size:cover;background-repeat:no-repeat;}
+.c{position:absolute;left:0;right:0;text-align:center;}
+.glow{text-shadow:0 0 30px rgba(255,60,230,.85),0 0 80px rgba(200,40,255,.6),0 6px 20px rgba(0,0,0,.6);}
+.ital{font-family:'Corm',serif;font-style:italic;}
+</style></head>
+<body><div id="stage"></div>
+<script>
+const B = 60/128;              // one beat @128BPM
+const DUR = 38*B;              // ≈17.8s
+const S = document.getElementById('stage');
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lin=(t,a,b)=>clamp((t-a)/(b-a));
+const eOut=x=>1-Math.pow(1-x,3);
+const eIn=x=>x*x*x;
+const eBack=x=>{const c1=1.9,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+const eInOut=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+function rnd(n){const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s);}
+
+function bg(src,{pos='50% 50%',scale=1,tx=0,ty=0,filter='',op=1}={}){
+  return `<div class="bg" style="background-image:url(img/${src});background-position:${pos};transform:translate(${tx}px,${ty}px) scale(${scale});filter:${filter};opacity:${op}"></div>`;
+}
+function grad(css){return `<div class="L" style="background:${css}"></div>`;}
+function flash(t,at,len=0.16,color='255,255,255'){
+  const k=lin(t,at,at+len); if(t<at||k>=1) return '';
+  return `<div class="L" style="background:rgba(${color},${(1-k)*0.95})"></div>`;
+}
+// punch-in at a cut: quick zoom settle
+const punch=(t,s0,amt=0.18)=>1+amt*(1-eOut(lin(t,s0,s0+0.35)));
+
+// ---------- scenes ----------
+const scenes=[];
+const add=(s,e,fn)=>scenes.push({s,e,fn});
+
+// S1 HOOK: 11.16 slam
+add(0,4*B,(t)=>{
+  const k=lin(t,-0.10,0.30), sc=2.8-1.8*eOut(k);
+  const shake=(1-lin(t,0.30,0.9))*(t>0.30?1:0);
+  const sx=(rnd(Math.floor(t*30))-.5)*36*shake, sy=(rnd(Math.floor(t*30)+9)-.5)*36*shake;
+  const blur=(1-k)*14;
+  const g=lin(t,2*B,2*B+0.35), g2=lin(t,3*B,3*B+0.3);
+  const pulse=0.6+0.4*Math.sin(t*14);
+  let h=bg('dark.jpg',{pos:'60% 50%',scale:1.35-0.12*lin(t,0,4*B),filter:'brightness(.45) saturate(1.3)'});
+  h+=grad('radial-gradient(ellipse at 50% 46%,rgba(255,40,220,.35),rgba(10,0,20,.75) 70%)');
+  h+=`<div class="L" style="transform:translate(${sx}px,${sy}px)">
+    <div class="c ital" style="top:560px;font-size:64px;letter-spacing:22px;opacity:${eOut(g2)};transform:translateY(${(1-eOut(g2))*30}px)">Gwanggyo Edutown</div>
+    <div class="c glow" style="top:660px;font-size:330px;font-weight:900;letter-spacing:-12px;line-height:1;transform:scale(${sc});filter:blur(${blur}px);opacity:${clamp(k*3)}">11.16</div>
+    <div class="c" style="top:1010px;font-size:96px;font-weight:800;letter-spacing:${30-14*eOut(g)}px;opacity:${eOut(g)};transform:translateY(${(1-eOut(g))*60}px)">GRAND OPEN</div>
+    <div class="c" style="top:1150px;"><div style="display:inline-block;width:${560*eOut(g)}px;height:6px;background:#ff3cdc;box-shadow:0 0 24px #ff3cdc;opacity:${pulse}"></div></div>
+  </div>`;
+  h+=flash(t,0.30,0.18)+flash(t,2*B,0.12,'255,60,220');
+  return h;
+});
+
+// S2 exterior sign pan
+add(4*B,8*B,(t,s)=>{
+  const p=eInOut(lin(t,s,s+4*B));
+  const a=lin(t,s+0.25,s+0.6), b2=lin(t,s+0.55,s+0.95);
+  let h=bg('sign.jpg',{pos:`${8+70*p}% 50%`,scale:punch(t,s,0.25)*1.05,filter:'brightness(.95) contrast(1.08)'});
+  h+=grad('linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(20,0,30,.85) 80%)');
+  h+=`<div class="c" style="top:1240px;font-size:64px;font-weight:600;opacity:${eOut(a)};transform:translateY(${(1-eOut(a))*40}px)">광교에듀타운에</div>
+      <div class="c glow" style="top:1330px;font-size:118px;font-weight:900;letter-spacing:-3px;opacity:${eOut(b2)};transform:scale(${1.3-0.3*eOut(b2)})">지금바레가 옵니다</div>`;
+  h+=flash(t,s,0.14);
+  return h;
+});
+
+// S3 checklist
+const items=[
+  {img:'barre_v.jpg',pos:'50% 60%',ko:'프리미엄 바',en:'Barre'},
+  {img:'wide.jpg',pos:'62% 50%',ko:'무드 라이팅',en:'Lighting'},
+  {img:'curtain.jpg',pos:'40% 50%',ko:'전면 미러',en:'Mirror'},
+  {img:'lounge.jpg',pos:'30% 40%',ko:'감성 라운지',en:'Lounge'},
+  {img:'desk.png',pos:'50% 50%',ko:'웰컴 데스크',en:'Welcome'},
+  {img:'entrance.jpg',pos:'22% 50%',ko:'여성 전용 스튜디오',en:'Ladies only'},
+];
+add(8*B,20*B,(t,s)=>{
+  const i=Math.min(5,Math.floor((t-s)/(2*B))), cs=s+i*2*B, it=items[i];
+  const k=lin(t,cs+0.05,cs+0.30), ck=lin(t,cs+0.35,cs+0.6);
+  const drift=lin(t,cs,cs+2*B);
+  const dir=i%2?1:-1;
+  let h=bg(it.img,{pos:it.pos,scale:punch(t,cs,0.22)*1.06,tx:dir*30*drift,filter:'brightness(.9) saturate(1.15)'});
+  h+=grad('linear-gradient(180deg,rgba(15,0,25,.55) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 55%,rgba(15,0,25,.9) 85%)');
+  // header
+  h+=`<div class="c" style="top:250px;font-size:40px;font-weight:700;letter-spacing:14px;color:#ffd6fb">OPEN CHECKLIST</div>
+      <div class="c" style="top:310px;font-size:34px;font-weight:500;letter-spacing:6px;opacity:.85">${String(i+1).padStart(2,'0')} / 06</div>`;
+  // label
+  const tick=eBack(ck);
+  h+=`<div class="c ital" style="top:1170px;font-size:72px;color:#ffb3f5;opacity:${eOut(k)};letter-spacing:4px">${it.en}</div>
+      <div class="c" style="top:1255px;font-size:${it.ko.length>7?96:116}px;font-weight:900;letter-spacing:-2px;opacity:${eOut(k)};transform:translateX(${dir*(1-eOut(k))*-120}px)">
+        <span class="glow">${it.ko}</span>
+        <span style="display:inline-block;vertical-align:middle;margin-left:18px;width:96px;height:96px;border-radius:50%;background:#ff2fd6;box-shadow:0 0 40px #ff2fd6;transform:scale(${tick});font-size:70px;line-height:96px;color:#fff;font-weight:900">✓</span>
+      </div>`;
+  // progress bar
+  const prog=(i+eOut(ck))/6;
+  h+=`<div style="position:absolute;left:140px;right:140px;top:1480px;height:10px;border-radius:5px;background:rgba(255,255,255,.22)">
+        <div style="width:${prog*100}%;height:100%;border-radius:5px;background:linear-gradient(90deg,#b23cff,#ff3cdc);box-shadow:0 0 20px #ff3cdc"></div></div>
+      <div class="c" style="top:1505px;font-size:34px;font-weight:700;letter-spacing:4px">${Math.round(prog*100)}%</div>`;
+  h+=flash(t,cs,0.12,i%2?'255,60,220':'255,255,255');
+  return h;
+});
+
+// S4 READY stamp
+add(20*B,24*B,(t,s)=>{
+  const k=lin(t,s+0.05,s+0.28), sc=2.4-1.4*eOut(k);
+  const shake=t>s+0.28?(1-lin(t,s+0.28,s+0.8)):0;
+  const sx=(rnd(Math.floor(t*30)+3)-.5)*40*shake, sy=(rnd(Math.floor(t*30)+7)-.5)*40*shake;
+  const sub=lin(t,s+2*B,s+2*B+0.3);
+  let h=bg('room2.jpg',{pos:'55% 50%',scale:1.12+0.08*lin(t,s,s+4*B),filter:'brightness(.55) saturate(1.3)'});
+  h+=grad('radial-gradient(ellipse at 50% 48%,rgba(255,40,220,.35),rgba(10,0,20,.7) 75%)');
+  h+=`<div class="c" style="top:560px;font-size:300px;font-weight:900;color:transparent;-webkit-text-stroke:3px rgba(255,180,250,.55);letter-spacing:-6px;opacity:${eOut(k)}">READY</div>`;
+  h+=`<div class="L" style="transform:translate(${sx}px,${sy}px)">
+      <div style="position:absolute;left:50%;top:820px;transform:translateX(-50%) rotate(-6deg) scale(${sc});opacity:${clamp(k*3)}">
+        <div style="padding:28px 56px;border:10px solid #fff;border-radius:24px;background:rgba(255,47,214,.92);box-shadow:0 0 60px #ff2fd6;white-space:nowrap;font-size:150px;font-weight:900;letter-spacing:-4px;line-height:1.05;text-align:center">오픈 준비<br>완료!</div>
+      </div></div>
+      <div class="c" style="top:1340px;font-size:58px;font-weight:600;opacity:${eOut(sub)};transform:translateY(${(1-eOut(sub))*30}px)">모든 준비를 마쳤어요</div>`;
+  h+=flash(t,s+0.28,0.2);
+  return h;
+});
+
+// S5 slogan on bokeh
+add(24*B,28*B,(t,s)=>{
+  const w1=lin(t,s+0.1,s+0.5), w2=lin(t,s+0.5,s+0.9), w3=lin(t,s+1.0,s+1.4);
+  let h=bg('bokeh.jpg',{pos:'8% 40%',scale:1.05+0.12*eOut(lin(t,s,s+4*B)),filter:'brightness(.75) saturate(1.2)'});
+  h+=grad('linear-gradient(180deg,rgba(15,0,25,.0) 30%,rgba(15,0,25,.8) 85%)');
+  const word=(x,txt,top,size,extra='')=>`<div class="c ${extra}" style="top:${top}px;font-size:${size}px;font-weight:900;opacity:${eOut(x)};filter:blur(${(1-x)*10}px);transform:translateY(${(1-eOut(x))*40}px);letter-spacing:-2px">${txt}</div>`;
+  h+=word(w1,'지금,',1080,120,'glow')+word(w2,'바레를 시작할',1220,104)+word(w3,'시간',1350,104,'glow');
+  h+=flash(t,s,0.12,'255,60,220');
+  return h;
+});
+
+// S6 NOW BARRE push
+add(28*B,30*B,(t,s)=>{
+  const p=lin(t,s,s+2*B);
+  let h=bg('light.jpg',{pos:'50% 45%',scale:1.0+0.45*eIn(p),filter:`brightness(${1+p*0.6}) saturate(1.2)`});
+  h+=flash(t,s,0.12);
+  h+=`<div class="L" style="background:rgba(255,255,255,${eIn(lin(t,s+1.5*B,s+2*B))})"></div>`;
+  return h;
+});
+
+// S7 End card
+add(30*B,DUR+1,(t,s)=>{
+  const f=lin(t,s,s+0.5), lg=lin(t,s+0.15,s+0.9), n1=lin(t,s+0.7,s+1.1), n2=lin(t,s+1.0,s+1.4), n3=lin(t,s+1.4,s+1.8), n4=lin(t,s+1.8,s+2.2);
+  const breathe=1+0.015*Math.sin((t-s)*3);
+  let h=bg('wide.jpg',{pos:'60% 50%',scale:1.2,filter:'blur(18px) brightness(.4) saturate(1.4)'});
+  h+=grad('radial-gradient(ellipse at 50% 38%,rgba(190,40,255,.45),rgba(12,2,20,.92) 70%)');
+  h+=`<div class="L" style="background:#fff;opacity:${1-f}"></div>`;
+  h+=`<div style="position:absolute;left:50%;top:330px;width:440px;height:428px;transform:translateX(-50%) scale(${(0.7+0.3*eBack(lg))*breathe});opacity:${eOut(lg)};filter:drop-shadow(0 0 30px rgba(255,60,230,.9)) drop-shadow(0 0 70px rgba(190,40,255,.6))">
+        <img src="logo.png" style="width:100%;height:100%"></div>`;
+  h+=`<div class="c" style="top:820px;font-size:140px;font-weight:800;letter-spacing:6px;opacity:${eOut(n1)};transform:translateY(${(1-eOut(n1))*30}px)">지금바레</div>
+      <div class="c" style="top:990px;font-size:46px;font-weight:600;letter-spacing:${26-8*eOut(n1)}px;opacity:${eOut(n1)}">NOW BARRE</div>
+      <div class="c" style="top:1100px"><div style="display:inline-block;width:${420*eOut(n2)}px;height:3px;background:linear-gradient(90deg,transparent,#ff3cdc,transparent)"></div></div>
+      <div class="c glow" style="top:1150px;font-size:104px;font-weight:900;color:#fff;letter-spacing:-1px;opacity:${eOut(n2)};transform:scale(${1.25-0.25*eOut(n2)})">11.16 <span style="color:#ff5ae4">OPEN</span></div>
+      <div class="c" style="top:1290px;font-size:56px;font-weight:600;opacity:${eOut(n3)};transform:translateY(${(1-eOut(n3))*24}px)">광교에듀타운 25호점</div>
+      <div class="c ital" style="top:1385px;font-size:66px;color:#ffb3f5;opacity:${eOut(n4)}">ladies only · nowbarre</div>`;
+  return h;
+});
+
+window.DUR=DUR;
+window.renderAt=(t)=>{
+  let h='';
+  for(const sc of scenes){ if(t>=sc.s && t<sc.e){ h=sc.fn(t,sc.s); break; } }
+  // subtle film grain/vignette over all
+  h+=`<div class="L" style="background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%);pointer-events:none"></div>`;
+  S.innerHTML=h;
+};
+window.preload=async()=>{
+  const srcs=['barre_v.jpg','wide.jpg','curtain.jpg','lounge.jpg','desk.png','entrance.jpg','sign.jpg','dark.jpg','room2.jpg','bokeh.jpg','light.jpg'].map(x=>'img/'+x).concat(['logo.png']);
+  window._keep=await Promise.all(srcs.map(src=>{const i=new Image();i.src=src;return i.decode().then(()=>i);}));
+  await document.fonts.load("900 100px Pret","지금바레");await document.fonts.load("italic 600 50px Corm","Ladies");
+  await document.fonts.ready;
+};
+</script></body></html>
