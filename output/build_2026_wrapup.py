@@ -16,6 +16,7 @@ MED = f"{F}/Pretendard-Medium.otf"
 SERIF = f"{F}/cormorant-garamond-latin-600-normal.woff"
 ITAL = f"{F}/cormorant-garamond-latin-400-italic.woff"
 BEIGE = "0xE9D8C2"
+POINT = "0xFFB15C"  # 포인트 컬러 (웜 앰버)
 
 TM = ("zscale=t=linear:npl=203,format=gbrpf32le,zscale=p=bt709,"
       "tonemap=mobius:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
@@ -40,11 +41,27 @@ def text(t, font, size, color, y, a, b, x="(w-text_w)/2", rise=24, shadow=True, 
     return (f"drawtext=fontfile={font}:textfile={tf(t)}:fontsize={size}:fontcolor={color}"
             f":x={x}:y='{yexpr}':alpha='{fade_alpha(a, b)}'{sh}{extra}")
 
+from PIL import ImageFont
+
+def rich(line, size, y, a, b, base=BOLD, hi=XBOLD, rise=24):
+    """[대괄호] 안의 단어를 포인트 컬러 + 더 굵게 그려서 가운데 정렬."""
+    import re
+    parts = [(m, i % 2 == 1) for i, m in enumerate(re.split(r"\[|\]", line)) if m]
+    fonts = {False: ImageFont.truetype(base, size), True: ImageFont.truetype(hi, size)}
+    widths = [fonts[h].getlength(t) for t, h in parts]
+    x = (1080 - sum(widths)) / 2
+    out = []
+    for (t, h), w in zip(parts, widths):
+        out.append(text(t, hi if h else base, size, POINT if h else "white", y, a, b,
+                        x=f"{x:.1f}", rise=rise))
+        x += w
+    return ",".join(out)
+
 def caption(eyebrow, line, d, a=0.25):
     b = d - 0.05
     return ",".join([
         text(eyebrow, ITAL, 46, BEIGE, 1150, a, b),
-        text(line, BOLD, 70, "white", 1215, a + 0.08, b),
+        rich(line, 70, 1215, a + 0.08, b),
     ])
 
 def zoom(d, z0, z1, fx=0.5, fy=0.5):
@@ -63,12 +80,12 @@ def make_grad():
 
 # (source, start, duration, zoom from, zoom to, focus x, focus y, eyebrow, caption)
 SEGS = [
-    ("7dcba8a4-IMG_5771.MOV", 0.0, 2.2, 1.14, 1.02, 0.62, 0.50, "Master Education 2026", "NOW BARRE 지도자 과정"),
-    ("e3530b3c-IMG_5708.MOV", 0.0, 2.1, 1.00, 1.08, 0.40, 0.45, "hands-on", "한 명 한 명, 직접 잡아주고"),
-    ("3a96f4b4-IMG_5707.MOV", 6.8, 2.0, 1.06, 1.00, 0.12, 0.55, "every detail", "디테일 하나까지 짚어주고"),
-    ("86ec96a0-IMG_5830.MOV", 1.0, 1.8, 1.00, 1.07, 0.42, 0.40, "lead by example", "먼저 몸으로 보여주는"),
-    ("6dc259bc-IMG_5848.MOV", 6.8, 2.0, 1.10, 1.02, 0.55, 0.45, "real practice", "실전 중심 바레 교육"),
-    ("ade5146a-IMG_5851.MOV", 7.0, 2.0, 1.28, 1.20, 0.80, 0.52, "2026 complete", "올해 교육, 마무리했습니다"),
+    ("7dcba8a4-IMG_5771.MOV", 0.0, 2.2, 1.14, 1.02, 0.62, 0.50, "Master Education 2026", "[NOW BARRE] 지도자 과정"),
+    ("e3530b3c-IMG_5708.MOV", 0.0, 2.1, 1.00, 1.08, 0.40, 0.45, "hands-on", "한 명 한 명, [직접] 잡아주고"),
+    ("3a96f4b4-IMG_5707.MOV", 6.8, 2.0, 1.06, 1.00, 0.12, 0.55, "every detail", "[디테일] 하나까지 짚어주고"),
+    ("86ec96a0-IMG_5830.MOV", 1.0, 1.8, 1.00, 1.07, 0.42, 0.40, "lead by example", "먼저 [몸으로] 보여주는"),
+    ("6dc259bc-IMG_5848.MOV", 6.8, 2.0, 1.10, 1.02, 0.55, 0.45, "real practice", "[실전 중심] 바레 교육"),
+    ("ade5146a-IMG_5851.MOV", 7.0, 2.0, 1.28, 1.20, 0.80, 0.52, "2026 complete", "올해 교육, [마무리]했습니다"),
 ]
 TRANS = ["fadewhite", "fadewhite", "fadewhite", "fadewhite", "fadewhite", "fade"]
 PHOTO_D = 4.1
@@ -108,11 +125,11 @@ def render_photo():
     end = 0.6
     a2 = t1 + 0.35
     overlays = ",".join([
-        caption("December", "12월은 강사님들과 연말 파티로!", t1 + 0.05, a=0.2),
+        caption("December", "12월은 강사님들과 [연말 파티]로!", t1 + 0.05, a=0.2),
         text("thank you, 2026", ITAL, 48, BEIGE, 700, a2, 99),
         text("더 단단하게 준비해서", MED, 50, "white", 790, a2 + 0.12, 99),
         text("2027", SERIF, 210, "white", 860, a2 + 0.3, 99, rise=30),
-        text("15기로 찾아뵙겠습니다", XBOLD, 76, "white", 1100, a2 + 0.45, 99),
+        rich("[15기]로 찾아뵙겠습니다", 76, 1100, a2 + 0.45, 99, base=XBOLD),
         f"drawbox=x=500:y=1240:w=80:h=2:color={BEIGE}@0.9:t=fill:enable='gte(t,{a2+0.6})'",
         text("NOW BARRE", SERIF, 56, "white", 1275, a2 + 0.65, 99, rise=0),
         text("Master Educator  전민희", MED, 30, BEIGE, 1350, a2 + 0.75, 99, rise=0),
