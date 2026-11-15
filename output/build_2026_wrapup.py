@@ -90,8 +90,8 @@ SEGS = [
     ("86ec96a0-IMG_5830.MOV", 1.4, 2, 1.00, 1.10, 0.42, 0.40, "Master Education 2026", "[NOW BARRE] 지도자 과정", "in"),
     ("7dcba8a4-IMG_5771.MOV", 0.3, 2, 1.12, 1.04, 0.62, 0.50, "Master Education 2026", "[NOW BARRE] 지도자 과정", "keep"),
     ("e3530b3c-IMG_5708.MOV", 0.0, 4, 1.00, 1.08, 0.40, 0.45, "hands-on", "한 명 한 명, [직접] 잡아주고", None),
-    ("3a96f4b4-IMG_5707.MOV", 6.8, 4, 1.06, 1.00, 0.12, 0.55, "every detail", "[디테일] 하나까지 짚어주고", None),
-    ("410f3d4d-IMG_5821.MOV", 0.0, 4, 1.00, 1.06, 0.50, 0.40, "lead by example", "먼저 [몸으로] 보여주는", None),
+    ("3a96f4b4-IMG_5707.MOV", 0.0, 4, 1.00, 1.00, 0.50, 0.50, "every detail", "[디테일] 하나까지 짚어주고", None),
+    ("ade5146a-IMG_5851.MOV", 0.3, 4, 1.15, 1.08, 0.40, 0.45, "lead by example", "먼저 [몸으로] 보여주는", None),
     ("6dc259bc-IMG_5848.MOV", 6.8, 4, 1.10, 1.02, 0.55, 0.45, "real practice", "[실전 중심] 바레 교육", None),
     ("ade5146a-IMG_5851.MOV", 7.0, 4, 1.28, 1.20, 0.80, 0.52, "2026 complete", "올해 교육, [마무리]했습니다", None),
 ]
@@ -157,7 +157,7 @@ def render_photo():
         text("NOW BARRE", SERIF, 56, POINT, 1275, t1 + 2.5 * BEAT, 99, rise=0),
         text("Master Educator  전민희", MED, 30, BEIGE, 1350, t1 + 2.7 * BEAT, 99, rise=0),
         FLASH,
-        f"fade=in:st={t1}:d=0.1:color=white",
+        f"drawbox=x=0:y=0:w=iw:h=ih:color=white@0.85:t=fill:enable='between(t,{t1},{t1 + 0.07})'",
     ])
     fc = (f"[0:v]{base},format=yuv420p,split[a][b];"
           f"[b]gblur=sigma=18,format=yuva420p,fade=in:st={t1-0.02}:d={end}:alpha=1[bl];"
