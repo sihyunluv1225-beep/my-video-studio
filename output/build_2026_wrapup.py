@@ -128,10 +128,10 @@ def render_photo():
         caption("December", "12월은 강사님들과 [연말 파티]로!", t1 + 0.05, a=0.2),
         text("thank you, 2026", ITAL, 48, BEIGE, 700, a2, 99),
         text("더 단단하게 준비해서", MED, 50, "white", 790, a2 + 0.12, 99),
-        text("2027", SERIF, 210, "white", 860, a2 + 0.3, 99, rise=30),
-        rich("[15기]로 찾아뵙겠습니다", 76, 1100, a2 + 0.45, 99, base=XBOLD),
+        text("2027", SERIF, 210, POINT, 860, a2 + 0.3, 99, rise=30),
+        text("15기로 찾아뵙겠습니다", XBOLD, 76, "white", 1100, a2 + 0.45, 99),
         f"drawbox=x=500:y=1240:w=80:h=2:color={BEIGE}@0.9:t=fill:enable='gte(t,{a2+0.6})'",
-        text("NOW BARRE", SERIF, 56, "white", 1275, a2 + 0.65, 99, rise=0),
+        text("NOW BARRE", SERIF, 56, POINT, 1275, a2 + 0.65, 99, rise=0),
         text("Master Educator  전민희", MED, 30, BEIGE, 1350, a2 + 0.75, 99, rise=0),
     ])
     fc = (f"[0:v]{base},format=yuv420p,split[a][b];"
