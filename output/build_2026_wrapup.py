@@ -108,7 +108,7 @@ def render_photo():
     end = 0.6
     a2 = t1 + 0.35
     overlays = ",".join([
-        caption("December", "12월, 우리 강사님들과 함께하는 연말", t1 + 0.05, a=0.2),
+        caption("December", "한 해 함께한 강사님들과 연말 모임", t1 + 0.05, a=0.2),
         text("thank you, 2026", ITAL, 48, BEIGE, 700, a2, 99),
         text("더 단단하게 준비해서", MED, 50, "white", 790, a2 + 0.12, 99),
         text("2027", SERIF, 210, "white", 860, a2 + 0.3, 99, rise=30),
