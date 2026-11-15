@@ -87,9 +87,9 @@ def bf(beat): return round(beat * BEAT * FPS)
 # (source, start, beats, zoom from, zoom to, focus x, focus y, eyebrow, caption, title mode)
 # title mode: "in" = 자막 등장 후 다음 컷까지 유지, "keep" = 이미 떠 있는 상태로 시작
 SEGS = [
-    ("86ec96a0-IMG_5830.MOV", 1.4, 2, 1.00, 1.10, 0.42, 0.40, "Master Education 2026", "[NOW BARRE] 지도자 과정", "in"),
-    ("7dcba8a4-IMG_5771.MOV", 0.3, 2, 1.12, 1.04, 0.62, 0.50, "Master Education 2026", "[NOW BARRE] 지도자 과정", "keep"),
-    ("e3530b3c-IMG_5708.MOV", 0.0, 4, 1.00, 1.08, 0.40, 0.45, "hands-on", "한 명 한 명, [직접] 잡아주고", None),
+    ("86ec96a0-IMG_5830.MOV", 1.4, 2, 1.00, 1.05, 0.42, 1.00, "Master Education 2026", "[NOW BARRE] 지도자 과정", "in"),
+    ("7dcba8a4-IMG_5771.MOV", 0.3, 2, 1.10, 1.03, 0.62, 1.00, "Master Education 2026", "[NOW BARRE] 지도자 과정", "keep"),
+    ("e3530b3c-IMG_5708.MOV", 0.0, 4, 1.00, 1.05, 0.40, 1.00, "hands-on", "한 명 한 명, [직접] 잡아주고", None),
     ("3a96f4b4-IMG_5707.MOV", 0.0, 4, 1.00, 1.00, 0.50, 0.50, "every detail", "[디테일] 하나까지 짚어주고", None),
     ("ade5146a-IMG_5851.MOV", 0.3, 4, 1.15, 1.08, 0.40, 0.45, "lead by example", "먼저 [몸으로] 보여주는", None),
     ("6dc259bc-IMG_5848.MOV", 6.8, 4, 1.10, 1.02, 0.55, 0.45, "real practice", "[실전 중심] 바레 교육", None),
