@@ -57,8 +57,8 @@ def rich(line, size, y, a, b, base=BOLD, hi=XBOLD, rise=24):
         x += w
     return ",".join(out)
 
-def caption(eyebrow, line, d, a=0.25):
-    b = d - 0.05
+def caption(eyebrow, line, d, a=0.25, hold=False):
+    b = 99 if hold else d - 0.05
     return ",".join([
         text(eyebrow, ITAL, 46, BEIGE, 1150, a, b),
         rich(line, 70, 1215, a + 0.08, b),
@@ -78,28 +78,51 @@ def make_grad():
                     "-vf", "geq=r=0:g=0:b=0:a='120*exp(-pow((Y-1240)/300,2))'",
                     "-frames:v", "1", GRAD], check=True)
 
-# (source, start, duration, zoom from, zoom to, focus x, focus y, eyebrow, caption)
+# ---- 130 BPM 비트 그리드: 모든 컷이 박자 위에 떨어지도록 프레임 단위로 계산 ----
+BPM = 130
+BEAT = 60 / BPM
+TOTAL_FRAMES = 15 * FPS
+def bf(beat): return round(beat * BEAT * FPS)
+
+# (source, start, beats, zoom from, zoom to, focus x, focus y, eyebrow, caption, title mode)
+# title mode: "in" = 자막 등장 후 다음 컷까지 유지, "keep" = 이미 떠 있는 상태로 시작
 SEGS = [
-    ("7dcba8a4-IMG_5771.MOV", 0.0, 2.2, 1.14, 1.02, 0.62, 0.50, "Master Education 2026", "[NOW BARRE] 지도자 과정"),
-    ("e3530b3c-IMG_5708.MOV", 0.0, 2.1, 1.00, 1.08, 0.40, 0.45, "hands-on", "한 명 한 명, [직접] 잡아주고"),
-    ("3a96f4b4-IMG_5707.MOV", 6.8, 2.0, 1.06, 1.00, 0.12, 0.55, "every detail", "[디테일] 하나까지 짚어주고"),
-    ("86ec96a0-IMG_5830.MOV", 1.0, 1.8, 1.00, 1.07, 0.42, 0.40, "lead by example", "먼저 [몸으로] 보여주는"),
-    ("6dc259bc-IMG_5848.MOV", 6.8, 2.0, 1.10, 1.02, 0.55, 0.45, "real practice", "[실전 중심] 바레 교육"),
-    ("ade5146a-IMG_5851.MOV", 7.0, 2.0, 1.28, 1.20, 0.80, 0.52, "2026 complete", "올해 교육, [마무리]했습니다"),
+    ("86ec96a0-IMG_5830.MOV", 1.4, 2, 1.00, 1.10, 0.42, 0.40, "Master Education 2026", "[NOW BARRE] 지도자 과정", "in"),
+    ("7dcba8a4-IMG_5771.MOV", 0.3, 2, 1.12, 1.04, 0.62, 0.50, "Master Education 2026", "[NOW BARRE] 지도자 과정", "keep"),
+    ("e3530b3c-IMG_5708.MOV", 0.0, 4, 1.00, 1.08, 0.40, 0.45, "hands-on", "한 명 한 명, [직접] 잡아주고", None),
+    ("3a96f4b4-IMG_5707.MOV", 6.8, 4, 1.06, 1.00, 0.12, 0.55, "every detail", "[디테일] 하나까지 짚어주고", None),
+    ("410f3d4d-IMG_5821.MOV", 0.0, 4, 1.00, 1.06, 0.50, 0.40, "lead by example", "먼저 [몸으로] 보여주는", None),
+    ("6dc259bc-IMG_5848.MOV", 6.8, 4, 1.10, 1.02, 0.55, 0.45, "real practice", "[실전 중심] 바레 교육", None),
+    ("ade5146a-IMG_5851.MOV", 7.0, 4, 1.28, 1.20, 0.80, 0.52, "2026 complete", "올해 교육, [마무리]했습니다", None),
 ]
-TRANS = ["fadewhite", "fadewhite", "fadewhite", "fadewhite", "fadewhite", "fade"]
-PHOTO_D = 4.1
+# 박자 시작점 → 프레임 수
+_starts = [0]
+for sg in SEGS: _starts.append(_starts[-1] + sg[2])
+SEG_FRAMES = [bf(_starts[k + 1]) - bf(_starts[k]) for k in range(len(SEGS))]
+PHOTO_BEAT0 = _starts[-1]          # 사진 시작 박 (24)
+END_BEAT = PHOTO_BEAT0 + 4         # 엔딩 카드 시작 박 (28)
+PHOTO_FRAMES = TOTAL_FRAMES - bf(PHOTO_BEAT0)
+PHOTO_D = PHOTO_FRAMES / FPS
+FLASH = "fade=in:st=0:d=0.12:color=white"  # 컷마다 짧은 화이트 플래시
 
 def run(args):
     r = subprocess.run(["ffmpeg", "-v", "error", "-y"] + args)
     if r.returncode: sys.exit(r.returncode)
 
 def render_seg(i, seg):
-    src, ss, d, z0, z1, fx, fy, eb, cap = seg
+    src, ss, _, z0, z1, fx, fy, eb, cap, mode = seg
+    d = SEG_FRAMES[i] / FPS
     vf = [TM, GRADE, zoom(d, z0, z1, fx, fy)]
     chain = ",".join(vf[:3])
-    overlays = caption(eb, cap, d)
-    if i == 1:  # 이름 카드
+    if mode == "in":
+        overlays = caption(eb, cap, d, a=0.12, hold=True)
+    elif mode == "keep":
+        overlays = caption(eb, cap, d, a=-5)
+    else:
+        overlays = caption(eb, cap, d)
+    if i > 0:  # 첫 프레임은 하얗게 시작하지 않도록
+        overlays += "," + FLASH
+    if i == 2:  # 이름 카드
         overlays += "," + ",".join([
             f"drawbox=x=80:y=250:w=4:h=118:color={BEIGE}:t=fill:enable='between(t,0.3,{d})'",
             text("전민희", XBOLD, 58, "white", 244, 0.3, d - 0.05, x="104", rise=0),
@@ -108,7 +131,7 @@ def render_seg(i, seg):
     fc = (f"[0:v]trim=start=0:duration={d},setpts=PTS-STARTPTS,{chain}[v];"
           f"[1:v]format=rgba[g];[v][g]overlay=0:0,{overlays},format=yuv420p[o]")
     run(["-ss", str(ss), "-t", str(d + 0.2), "-i", f"{U}/{src}", "-loop", "1", "-i", GRAD,
-         "-filter_complex", fc, "-map", "[o]", "-t", str(d), "-r", str(FPS),
+         "-filter_complex", fc, "-map", "[o]", "-frames:v", str(SEG_FRAMES[i]), "-r", str(FPS),
          "-c:v", "libx264", "-preset", "medium", "-crf", "14", "-pix_fmt", "yuv420p",
          "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709",
          f"{OUT}/seg{i}.mp4"])
@@ -117,57 +140,55 @@ def render_photo():
     d = PHOTO_D
     n = round(d * FPS)
     img = f"{U}/7e3f42ec-image.jpg"
-    t1 = 2.0  # 연말행사 → 엔딩 전환 시점
+    t1 = (bf(END_BEAT) - bf(PHOTO_BEAT0)) / FPS  # 연말파티 → 엔딩 전환 (정확히 28번째 박)
     # 1500x2000 → 높이 3840 기준 2880x3840, 가로 중앙보다 약간 왼쪽(인물 쪽)으로 크롭
     base = (f"scale=2880:3840:flags=lanczos,crop=2160:3840:300:0,"
             f"zoompan=z='1.0+0.09*on/{n}':d=1:s=1080x1920:fps={FPS}"
             f":x='iw/2-iw/zoom/2':y='ih*0.42-ih/zoom/2',{GRADE}")
-    end = 0.6
-    a2 = t1 + 0.35
+    end = 0.3
+    a2 = t1 + 0.03
     overlays = ",".join([
-        caption("December", "12월은 강사님들과 [연말 파티]로!", t1 + 0.05, a=0.2),
+        caption("December", "12월은 강사님들과 [연말 파티]로!", t1, a=0.2),
         text("thank you, 2026", ITAL, 48, BEIGE, 700, a2, 99),
-        text("더 단단하게 준비해서", MED, 50, "white", 790, a2 + 0.12, 99),
-        text("2027", SERIF, 210, POINT, 860, a2 + 0.3, 99, rise=30),
-        text("15기로 찾아뵙겠습니다", XBOLD, 76, "white", 1100, a2 + 0.45, 99),
-        f"drawbox=x=500:y=1240:w=80:h=2:color={BEIGE}@0.9:t=fill:enable='gte(t,{a2+0.6})'",
-        text("NOW BARRE", SERIF, 56, POINT, 1275, a2 + 0.65, 99, rise=0),
-        text("Master Educator  전민희", MED, 30, BEIGE, 1350, a2 + 0.75, 99, rise=0),
+        text("더 단단하게 준비해서", MED, 50, "white", 790, a2 + 0.08, 99),
+        text("2027", SERIF, 210, POINT, 860, t1 + BEAT, 99, rise=30),          # 29번째 박
+        text("15기로 찾아뵙겠습니다", XBOLD, 76, "white", 1100, t1 + 2 * BEAT, 99),  # 30번째 박
+        f"drawbox=x=500:y=1240:w=80:h=2:color={BEIGE}@0.9:t=fill:enable='gte(t,{t1 + 2.5 * BEAT})'",
+        text("NOW BARRE", SERIF, 56, POINT, 1275, t1 + 2.5 * BEAT, 99, rise=0),
+        text("Master Educator  전민희", MED, 30, BEIGE, 1350, t1 + 2.7 * BEAT, 99, rise=0),
+        FLASH,
+        f"fade=in:st={t1}:d=0.1:color=white",
     ])
     fc = (f"[0:v]{base},format=yuv420p,split[a][b];"
-          f"[b]gblur=sigma=18,format=yuva420p,fade=in:st={t1-0.1}:d={end}:alpha=1[bl];"
+          f"[b]gblur=sigma=18,format=yuva420p,fade=in:st={t1-0.02}:d={end}:alpha=1[bl];"
           f"[a][bl]overlay=0:0[m];"
           f"color=black:1080x1920:r={FPS},format=yuva420p,colorchannelmixer=aa=0.5,"
-          f"fade=in:st={t1-0.1}:d={end}:alpha=1[dk];"
+          f"fade=in:st={t1-0.02}:d={end}:alpha=1[dk];"
           f"[m][dk]overlay=0:0:shortest=1[m2];"
-          f"[2:v]format=rgba,fade=out:st={t1-0.2}:d=0.3:alpha=1[g];"
+          f"[2:v]format=rgba,fade=out:st={t1-0.05}:d=0.2:alpha=1[g];"
           f"[m2][g]overlay=0:0,{overlays},format=yuv420p[o]")
     run(["-loop", "1", "-framerate", str(FPS), "-t", str(d), "-i", img,
          "-f", "lavfi", "-i", "anullsrc", "-loop", "1", "-framerate", str(FPS), "-t", str(d), "-i", GRAD,
-         "-filter_complex", fc, "-map", "[o]", "-t", str(d), "-r", str(FPS),
+         "-filter_complex", fc, "-map", "[o]", "-frames:v", str(PHOTO_FRAMES), "-r", str(FPS),
          "-c:v", "libx264", "-preset", "medium", "-crf", "14", "-pix_fmt", "yuv420p",
          f"{OUT}/seg_photo.mp4"])
 
+MUSIC = f"{S}/music.wav"
+
 def assemble():
     files = [f"{OUT}/seg{i}.mp4" for i in range(len(SEGS))] + [f"{OUT}/seg_photo.mp4"]
-    durs = [s[2] for s in SEGS] + [PHOTO_D]
     args = []
     for f in files: args += ["-i", f]
-    parts, prev, acc = [], "[0:v]", durs[0]
-    for k in range(1, len(files)):
-        off = acc - XF
-        lab = f"[x{k}]"
-        parts.append(f"{prev}[{k}:v]xfade=transition={TRANS[k-1]}:duration={XF}:offset={off:.3f}{lab}")
-        prev, acc = lab, acc + durs[k] - XF
-    total = acc
-    fc = ";".join(parts) + f";{prev}format=yuv420p[v]"
+    n = len(files)
+    fc = "".join(f"[{k}:v]" for k in range(n)) + f"concat=n={n}:v=1:a=0,format=yuv420p[v]"
     out = f"{S}/NOWBARRE_2026_교육마무리_15기예고.mp4"
-    run(args + ["-f", "lavfi", "-t", f"{total:.3f}", "-i", "anullsrc=r=48000:cl=stereo",
-                "-filter_complex", fc, "-map", "[v]", "-map", f"{len(files)}:a",
+    run(args + ["-i", MUSIC,
+                "-filter_complex", fc, "-map", "[v]", "-map", f"{n}:a",
                 "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p",
                 "-profile:v", "high", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709",
-                "-c:a", "aac", "-b:a", "128k", "-shortest", "-movflags", "+faststart", out])
-    print("total", round(total, 2), out)
+                "-c:a", "aac", "-b:a", "192k", "-frames:v", str(TOTAL_FRAMES), "-t", "15", "-movflags", "+faststart", out])
+    cuts = [round(bf(b) / FPS, 3) for b in _starts] + [round(bf(END_BEAT) / FPS, 3)]
+    print("cuts(s):", cuts, "->", out)
 
 if __name__ == "__main__":
     make_grad()
